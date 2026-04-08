@@ -94,6 +94,7 @@ class TestCachePersistence:
 
     def test_survives_memory_reset(self):
         """Dati salvati su disco sopravvivono al reset della memoria."""
+        cache.set_disk_consent(True)
         cache.set("persistent", {"data": "saved"})
 
         # Simula reset memoria (nuova sessione)
@@ -101,15 +102,26 @@ class TestCachePersistence:
 
         result = cache.get("persistent")
         assert result == {"data": "saved"}
+        cache.set_disk_consent(False)
 
     def test_clear_removes_file(self):
         """Clear rimuove anche il file su disco."""
         import os
 
+        cache.set_disk_consent(True)
         cache.set("temp", {"data": 1})
         assert os.path.exists(cache._CACHE_FILE)
 
         cache.clear()
+        assert not os.path.exists(cache._CACHE_FILE)
+        cache.set_disk_consent(False)
+
+    def test_no_file_without_consent(self):
+        """Senza consenso, nessun file viene scritto su disco."""
+        import os
+
+        cache.set_disk_consent(False)
+        cache.set("noconsent", {"data": 1})
         assert not os.path.exists(cache._CACHE_FILE)
 
 

@@ -1,9 +1,22 @@
 import sys
 import io
 
+import cache
+import config
 from geocoding import get_coordinates, get_coordinates_multi
 from weather import get_weather, get_weather_multi, get_forecast
 from display import display_weather, display_forecast
+
+
+def _ask_consent() -> bool:
+    """Chiede il consenso per salvare dati su disco (cache offline)."""
+    if not config.CACHE_DISK_ENABLED:
+        return False
+    print()
+    print("  L'app puo' salvare i dati meteo su disco per uso offline.")
+    print("  Nessun dato personale viene raccolto, solo risultati meteo.")
+    choice = input("  Acconsenti al salvataggio locale? (s/n): ").strip().lower()
+    return choice in ("s", "si", "y", "yes")
 
 
 def _ask_mode() -> str:
@@ -23,6 +36,10 @@ def main():
     print("  ║           ☁️  APP METEO  ☀️           ║")
     print("  ╚══════════════════════════════════════╝")
 
+    # Consenso utente per la cache su disco
+    consent = _ask_consent()
+    cache.set_disk_consent(consent)
+
     raw = input("\n  Citta' (separa piu' citta' con virgola): ").strip()
 
     if not raw:
@@ -35,6 +52,10 @@ def main():
         print("Errore: nessuna citta' valida inserita.")
         return
 
+    if len(city_names) > config.MAX_CITIES:
+        print(f"  Attenzione: massimo {config.MAX_CITIES} citta', le altre saranno ignorate.")
+        city_names = city_names[:config.MAX_CITIES]
+
     mode = _ask_mode()
     forecast_days = 0
     if mode == "2":
@@ -42,7 +63,7 @@ def main():
     elif mode == "3":
         forecast_days = 5
 
-    # Singola città
+    # Singola citta'
     if len(city_names) == 1:
         try:
             city_info = get_coordinates(city_names[0])
@@ -55,7 +76,7 @@ def main():
             print(f"Errore: {e}")
         return
 
-    # Più città
+    # Piu' citta'
     try:
         cities, errors = get_coordinates_multi(city_names)
 

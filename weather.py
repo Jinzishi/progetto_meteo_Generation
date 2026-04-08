@@ -1,5 +1,7 @@
 import requests
+
 import cache
+import config
 
 
 # Sessione condivisa per riutilizzare le connessioni TCP
@@ -72,15 +74,18 @@ def get_weather(latitude: float, longitude: float) -> dict:
     if cached is not None:
         return cached
 
-    url = "https://api.open-meteo.com/v1/forecast"
     params = {
         "latitude": latitude,
         "longitude": longitude,
         "current": _CURRENT_FIELDS,
         "timezone": "auto",
     }
+    if config.API_KEY:
+        params["apikey"] = config.API_KEY
 
-    response = _session.get(url, params=params, timeout=10)
+    response = _session.get(
+        config.WEATHER_API_URL, params=params, timeout=config.REQUEST_TIMEOUT
+    )
     response.raise_for_status()
     data = response.json()
 
@@ -97,7 +102,6 @@ def get_forecast(latitude: float, longitude: float, days: int = 5) -> list[dict]
     if cached is not None:
         return cached
 
-    url = "https://api.open-meteo.com/v1/forecast"
     params = {
         "latitude": latitude,
         "longitude": longitude,
@@ -105,8 +109,12 @@ def get_forecast(latitude: float, longitude: float, days: int = 5) -> list[dict]
         "forecast_days": days,
         "timezone": "auto",
     }
+    if config.API_KEY:
+        params["apikey"] = config.API_KEY
 
-    response = _session.get(url, params=params, timeout=10)
+    response = _session.get(
+        config.WEATHER_API_URL, params=params, timeout=config.REQUEST_TIMEOUT
+    )
     response.raise_for_status()
     data = response.json()
 
@@ -123,15 +131,18 @@ def get_weather_multi(cities: list[dict]) -> list[dict]:
     if len(cities) == 1:
         return [get_weather(cities[0]["latitude"], cities[0]["longitude"])]
 
-    url = "https://api.open-meteo.com/v1/forecast"
     params = {
         "latitude": ",".join(str(c["latitude"]) for c in cities),
         "longitude": ",".join(str(c["longitude"]) for c in cities),
         "current": _CURRENT_FIELDS,
         "timezone": "auto",
     }
+    if config.API_KEY:
+        params["apikey"] = config.API_KEY
 
-    response = _session.get(url, params=params, timeout=15)
+    response = _session.get(
+        config.WEATHER_API_URL, params=params, timeout=config.REQUEST_TIMEOUT + 5
+    )
     response.raise_for_status()
     data = response.json()
 

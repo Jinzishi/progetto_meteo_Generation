@@ -38,22 +38,14 @@ class TestGeocodingEdgeCases:
         args, kwargs = mock_get.call_args
         assert kwargs["params"]["name"] == "MILANO"
 
-    @patch("geocoding._session.get")
-    def test_very_long_input(self, mock_get):
-        """Input molto lungo non causa crash."""
-        mock_get.return_value.raise_for_status = lambda: None
-        mock_get.return_value.json.return_value = {}
-
-        with pytest.raises(ValueError, match="non trovata"):
+    def test_very_long_input(self):
+        """Input molto lungo bloccato dalla sanitizzazione."""
+        with pytest.raises(ValueError, match="troppo lungo"):
             get_coordinates("A" * 1000)
 
-    @patch("geocoding._session.get")
-    def test_emoji_input(self, mock_get):
-        """Input con emoji non causa crash."""
-        mock_get.return_value.raise_for_status = lambda: None
-        mock_get.return_value.json.return_value = {}
-
-        with pytest.raises(ValueError, match="non trovata"):
+    def test_emoji_input(self):
+        """Input con emoji bloccato dalla sanitizzazione."""
+        with pytest.raises(ValueError, match="non validi"):
             get_coordinates("\U0001f327\ufe0f")
 
     @patch("geocoding._session.get")

@@ -30,12 +30,13 @@ class TestGeocodingSuccess:
         mock_get.return_value.raise_for_status = lambda: None
         mock_get.return_value.json.return_value = geocoding_success_response
 
+        import config
         get_coordinates("Milano")
 
         mock_get.assert_called_once_with(
-            "https://geocoding-api.open-meteo.com/v1/search",
+            config.GEOCODING_API_URL,
             params={"name": "Milano", "count": 1, "language": "it"},
-            timeout=10,
+            timeout=config.REQUEST_TIMEOUT,
         )
 
     @patch("geocoding._session.get")
